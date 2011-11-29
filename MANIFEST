@@ -9,3 +9,5 @@ META.yml
 README
 t/001_load.t
 t/002_jack.t
+t/rt_72808.t
+

@@ -13,10 +13,10 @@ Acme::24 - Your favourite TV-show Acme module
    # 'Jack Bauer went out to the desert, and was bitten by a rattlesnake.
    #  The snake died.'
 
-   # Returns an arrayref with 25 random facts
+   # Returns an arrayref with 24 random facts
    my $facts = Acme::24->random_jackbauer_facts();
 
-   # Every call collects 25 random facts in a text file
+   # Every call collects 24 random facts in a text file
    # called `/tmp/superhero.txt' in fortune text format
    Acme::24->collect_facts('/tmp/superhero.txt');
 
@@ -44,7 +44,7 @@ Artistic License, same as Perl itself.
 
 package Acme::24;
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use strict;
 use warnings;
@@ -78,18 +78,33 @@ sub random_jackbauer_fact
 
 }
 
-# Returns an array of 25 random facts
+# Returns an array of 24 random facts
 sub random_jackbauer_facts
 {
-    my %result;
-    my $url = URL . '/rss.php';
-    my $feed = LWP::Simple::get($url);
-    XML::RSSLite::parseRSS(\%result, \$feed);
     my @facts = ();
-    if(exists $result{item} && UNIVERSAL::isa($result{item}, 'ARRAY'))
-    {
-        @facts = map { $_->{title} } @{$result{item}};
+    my $url = URL . '/rss.php';
+    my $tries = 5;
+    my %seen;
+
+    while ($tries-- > 0 && @facts < 24) {
+        my %result;
+        my $feed = LWP::Simple::get($url);
+        XML::RSSLite::parseRSS(\%result, \$feed);
+        if (exists $result{item} && UNIVERSAL::isa($result{item}, 'ARRAY'))
+        {
+	    for my $fact (@{ $result{item} }) {
+		next if exists $seen{$fact->{title}};
+		push @facts, $fact->{title};
+		$seen{$fact->{title}} = undef;
+	    }
+        }
+        sleep 1;
     }
+
+    if (@facts && scalar(@facts) > 24) {
+        splice(@facts, 24);
+    }
+
     return(\@facts);
 }
 
